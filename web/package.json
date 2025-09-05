@@ -5,7 +5,7 @@
   "scripts": {
       "dev": "nodemon server.js",
       "start": "node server.js",
-      "test": "echo \"No testing configured\" && exit 0",
+      "test": "echo \"No testing configured\" && exit 1",
       "lint" : "echo \"No linting configured\""
   },
   "author": "alberto perez meneses",
