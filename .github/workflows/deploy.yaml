@@ -1,0 +1,63 @@
+name: Deploy CI
+on:
+  workflow_dispatch:
+
+jobs:
+  run_deploy:
+    name: deploy to server
+    runs-on: ubuntu-latest
+
+    steps:
+      # Paso 1: Debug de secrets (sin mostrar valores sensibles)
+      - name: Debug secrets
+        run: |
+          if [ -z "${{ secrets.SSH_HOST }}" ]; then
+            echo "SSH_HOST está vacío"
+            exit 1
+          else
+            echo "SSH_HOST está configurado"
+          fi
+
+          if [ -z "${{ secrets.SSH_USER }}" ]; then
+            echo "SSH_USER está vacío"
+            exit 1
+          else
+            echo "SSH_USER está configurado"
+          fi
+
+          if [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
+            echo "SSH_PRIVATE_KEY está vacío"
+            exit 1
+          else
+            echo "SSH_PRIVATE_KEY está configurado"
+          fi
+
+          if [ -z "${{ secrets.SSH_PORT }}" ]; then
+            echo "SSH_PORT está vacío"
+            exit 1
+          else
+            echo "SSH_PORT está configurado"
+          fi
+
+      # Paso 2: Ejecutar comandos remotos por SSH
+      - name: executing remote ssh commands using ssh key
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            # Login en GitHub Container Registry
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            # Descargar última versión de la imagen
+            docker pull ghcr.io/${{ github.repository_owner }}/skill-actions-0925-node-app:latest
+
+            # Detener y borrar contenedor previo si existe
+            docker stop myapp || true
+            docker rm myapp || true
+
+            # Iniciar nuevo contenedor
+            docker run -d --name myapp -p 3000:3000 ghcr.io/${{ github.repository_owner }}/skill-actions-0925-node-app:latest
+            docker ps
